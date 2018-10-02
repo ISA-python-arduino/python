@@ -11,4 +11,3 @@ while True:
     out = out.decode("utf-8")
     out = out.replace('X=', '').replace('out=', '').replace('wart_star=', '').replace(',','');
     print(out);
-    time.sleep(1);
