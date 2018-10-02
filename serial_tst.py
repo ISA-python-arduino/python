@@ -9,4 +9,4 @@ ser = serial.Serial('/dev/ttyACM0', 9600);
 while True:
     out = ser.readline().decode("utf-8")
     num = re.findall(r"[-+]?\d*\.\d+|\d+", out);
-    print(num);
+    print(num[0]);
