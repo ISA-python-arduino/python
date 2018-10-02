@@ -5,6 +5,6 @@ print('Serial script started');
 ser = serial.Serial('/dev/ttyACM0', 9600);
 
 while True:
-    out = ser.readline()
-    out = out.replace('b X=\t', '')#.replace(' , out=', '').replace(' wart_star=', '').replace('\n', '');
+    out = ser.readline().decode("utf-8") 
+    out = out.replace('X=\t', '').replace(' , out=', '').replace(' wart_star=', '');
     print(out);
