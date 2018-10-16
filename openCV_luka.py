@@ -22,10 +22,10 @@ while(True):
     frameOut = cv2.flip(frame, 0)
     # frameOut = cv2.resize(frame, (200, 160))
 
-    frameOut[:, int(basicWidth / 2)] = [255, 0, 0]
-    frameOut[int(basicHeight / 2), :] = [255, 0, 0]
+    # frameOut[:, int(basicWidth / 2)] = [255, 0, 0]
+    # frameOut[int(basicHeight / 2), :] = [255, 0, 0]
 
-
+    cv2.circle(frameOut, (int(basicWidth / 2), int(basicHeight / 2)), 100, [0,0,255], 1, 8, 0)
 
 #    size, shape->zwaraca liczbe wierszy i kolumn shape(row, col) zwraca
 
