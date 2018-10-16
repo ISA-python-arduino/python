@@ -6,7 +6,8 @@ import cv2
 cap = cv2.VideoCapture(0)
 # cap.set(CAP_PROP_FRAME_WIDTH, 640)
 # cap.set(CAP_PROP_FRAME_HEIGHT, 480)
-
+basicWidth = 640
+basicHeight = 480
 while(True):
     # Capture frame-by-frame
     ret, frame = cap.read()
@@ -19,9 +20,13 @@ while(True):
     
     frameOut = frame.copy()
     frameOut = cv2.flip(frame, 0)
+    # frameOut = cv2.resize(frame, (200, 160))
 
-    
-   
+    frameOut[:, int(basicWidth / 2)] = [255, 0, 0]
+    frameOut[int(basicHeight / 2), :] = [255, 0, 0]
+
+
+
 #    size, shape->zwaraca liczbe wierszy i kolumn shape(row, col) zwraca
 
     # Display the resulting frame
