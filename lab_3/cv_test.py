@@ -156,7 +156,7 @@ for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video
         print("New color range: {}".format(colorTolerance))
     elif key == ord('p'):
         paused = not paused
-    elif key == ord('d'):
+    #elif key == ord('d'):
         # pause/unpause arduino camera movement
         #ser.write(bytes('d', 'utf-8'))
     
