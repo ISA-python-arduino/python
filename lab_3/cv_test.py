@@ -110,7 +110,7 @@ for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video
             scaled = (translate(distanceVector[0], -width//2, width//2), translate(distanceVector[1], -height//2, height//2) )
             # print("Vector scaled: {}".format(scaled))
             cv2.line(upscaledColor, screenMiddle, biggestObjectMiddle, (0, 0, 255))
-            yaw = 'y {}\n'.format(scaled[0])
+            yaw = scaled[0]
             b_yaw = bytes(yaw, 'utf-8') # or 'ascii'
             #pitch = 'p {}\n'.format(scaled[1])
             #b_pitch = bytes(pitch, 'utf-8') # or 'ascii'
