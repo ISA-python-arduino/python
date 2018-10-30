@@ -6,6 +6,7 @@ import cv2
 cap = cv2.VideoCapture(0)
 # cap.set(CAP_PROP_FRAME_WIDTH, 640)
 # cap.set(CAP_PROP_FRAME_HEIGHT, 480)
+<<<<<<< HEAD:openCV.py
 
 WIDTH = 1280
 HEIGHT = 960
