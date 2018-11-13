@@ -4,6 +4,7 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 import numpy as np
 import cv2
+import struct
 # import numpy as np
 # import typing
 
@@ -23,7 +24,7 @@ camera.framerate = 60
 cameraResolution = (640, 480)
 camera.resolution = cameraResolution
 
-# camera.awb_mode = 'tungsten'
+# camera.awb_mode = 'auto'
 camera.vflip = camera.hflip = True
 camera.video_stabilization = True
 rawCapture = PiRGBArray(camera, size=cameraResolution)
@@ -38,6 +39,12 @@ roiSize = (6, 6) # roi size on the scaled down image (converted to HSV)
 
 # initialize serial communication
 ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
+
+satLow = -110
+satUp = 50
+valLow = -90
+valUp = 50
+
 
 # while True:
 for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
@@ -114,7 +121,9 @@ for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video
             b_yaw = bytes(yaw) # or 'ascii'
             #pitch = 'p {}\n'.format(scaled[1])
             #b_pitch = bytes(pitch, 'utf-8') # or 'ascii'
-            ser.write(b_yaw)
+            send = b_yaw + ';' + bytes(150) + ';'
+            # struct.pack("<IB", yaw, )
+            ser.write(send)
             # print(ser.read_all())
             #ser.write(b_pitch)
             # print(ser.read_all())
@@ -146,8 +155,13 @@ for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video
         avg_s /= i
         avg_v /= i
         print("HUE:{}, SAT:{}, VAL:{}".format(avg_h, avg_s, avg_v))
-        blueLower = (max(0,avg_h), max(0, avg_s - 50), max(0,avg_v - 50))
-        blueUpper = (min (255, avg_h), min(255, avg_s + 50), min(255, avg_v + 50))
+        # print(satLow)
+        # print(valLow)
+        # print(satUp)
+        # print(valUp)
+        blueLower = (max(0,avg_h), max(0, avg_s + satLow), max(0,avg_v + valLow))
+        blueUpper = (min (255, avg_h), min(255, avg_s + satUp), min(255, avg_v + valUp))
+        print("blueLower: " + str(blueLower) + " blueUpper: " + str(blueUpper) )
     elif key == ord('w'):
         colorTolerance = min(colorTolerance + 1, 50)
         print("New color range: {}".format(colorTolerance))
@@ -156,12 +170,33 @@ for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video
         print("New color range: {}".format(colorTolerance))
     elif key == ord('p'):
         paused = not paused
+    elif key == ord('t'):
+        satLow = satLow + 10
+    elif key == ord('g'):
+        satLow = satLow - 10
+    
+    elif key == ord('y'):
+        satUp = satUp + 10
+    
+    elif key == ord('h'):
+        satUp = satUp - 10
+
+    elif key == ord('u'):
+        valLow = valLow + 10
+    elif key == ord('j'):
+        valLow = valLow - 10
+    
+    elif key == ord('i'):
+        valUp = valUp + 10
+    
+    elif key == ord('k'):
+        valUp = valUp - 10
     #elif key == ord('d'):
         # pause/unpause arduino camera movement
         #ser.write(bytes('d', 'utf-8'))
     
     rawCapture.truncate(0)
     loopEnd= time.time()
-    print("loop execution took {:3.2f}ms".format((loopEnd - loopStart)*1000))
+    #print("loop execution took {:3.2f}ms".format((loopEnd - loopStart)*1000))
     
 cv2.destroyAllWindows()
