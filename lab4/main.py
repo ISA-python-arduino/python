@@ -6,6 +6,7 @@ import serial
 import numpy as np
 import cv2
 import random as rng
+import math
 # import typing
 
 
@@ -17,11 +18,6 @@ def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
     NewValue = (((value - oldMin) * newRange) / oldRange) + newMin
 
     return int(NewValue)
-
-Eps = 5
-def inRange(r1, r2):
-    return abs(r1 - r2) <= Eps
-
 
 usesPiCamera = False
 
@@ -92,14 +88,14 @@ while True:
                 area = cv2.contourArea(contour)
                 if area > ((newWidth * newHeight)/256):
                     M = cv2.moments(contour)
-                    cx = int(M['m10']/M['m00'])
-                    cy = int(M['m01']/M['m00'])
-                    epsilon = 0.01*cv2.arcLength(contour,True)
-                    approx = cv2.approxPolyDP(contour, epsilon,True)
-                    (xc,yc),radius = cv2.minEnclosingCircle(contour)
-                    ar = radius*radius * 3.14
-                    x,y,w,h = cv2.boundingRect(contour)
-                    if (len(approx) > 12 and inRange(cx, xc) and inRange(cy, yc)):
+                    n02 = M['nu02']
+                    n20 = M['nu20']
+                    momentArea = M['m00']
+                    momentR = math.sqrt(momentArea / 3.141592)
+                    maxMoment = max(n02, n20)
+                    minMoment = min(n02, n20)
+                    if (maxMoment / minMoment) > 0.75 and (maxMoment / minMoment) < 1.25:
+                        x,y,w,h = cv2.boundingRect(contour)
                         boundingBoxes.append((x,y,w,h))
                         filteredContours.append(contour)
                         
