@@ -1,6 +1,3 @@
-# parts of the code are based on https://www.pyimagesearch.com/2016/01/04/unifying-picamera-and-cv2-videocapture-into-a-single-class-with-opencv/
-# before rnning the code install imutils for python3 (pip3 install imutils)
-
 import time 
 from imutils.video import VideoStream
 import serial
@@ -8,7 +5,7 @@ import serial
 # from picamera import PiCamera
 import numpy as np
 import cv2
-# import numpy as np
+import random as rng
 # import typing
 
 
@@ -21,7 +18,7 @@ def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
 
     return int(NewValue)
 
-usesPiCamera = True
+usesPiCamera = False
 
 # camera = PiCamera()
 # camera.framerate = 60
@@ -34,7 +31,7 @@ cameraResolution = (640, 480)
 # rawCapture = PiRGBArray(camera, size=cameraResolution)
 
 # initialize the video stream and allow the cammera sensor to warmup
-vs = VideoStream(usePiCamera=usesPiCamera, resolution=cameraResolution, framerate=60, hFlip=True, vFlip=True).start()
+vs = VideoStream(usePiCamera=usesPiCamera, resolution=cameraResolution, framerate=60).start()
 time.sleep(2.0)
 
 
@@ -47,7 +44,7 @@ roiSize = (6, 6) # roi size on the scaled down image (converted to HSV)
 
 
 # initialize serial communication
-ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
+ser = serial.Serial(port='COM5', baudrate=57600, timeout=0.05)
 
 while True:
 # for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
