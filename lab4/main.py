@@ -18,6 +18,11 @@ def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
 
     return int(NewValue)
 
+Eps = 5
+def inRange(r1, r2):
+    return abs(r1 - r2) <= Eps
+
+
 usesPiCamera = False
 
 # camera = PiCamera()
@@ -44,7 +49,7 @@ roiSize = (6, 6) # roi size on the scaled down image (converted to HSV)
 
 
 # initialize serial communication
-ser = serial.Serial(port='COM5', baudrate=57600, timeout=0.05)
+#ser = serial.Serial(port='COM5', baudrate=57600, timeout=0.05)
 
 while True:
 # for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
@@ -72,26 +77,38 @@ while True:
         blueUpperWithTolerance = (blueUpper[0] + colorTolerance,) + blueUpper[1:]
 
         mask = cv2.inRange(resizedHSV, blueLowerWithTolerance, blueUpperWithTolerance)
+
         cv2.erode(mask, None, iterations=5)
         cv2.dilate(mask, None, iterations=5)
 
-        (_,contours, hierarchy) = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        (_,contours, hierarchy) = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
         boundingBoxes = []
         biggestObject_BoundingBox = None
         biggestObjectMiddle = None
-        if contours:
-            largestContour = max(contours, key=cv2.contourArea)
-            biggestObject_BoundingBox = cv2.boundingRect(largestContour)
-            
+        filteredContours = []
+        if contours:            
             for i, contour in enumerate(contours):
                 area = cv2.contourArea(contour)
                 if area > ((newWidth * newHeight)/256):
+                    M = cv2.moments(contour)
+                    cx = int(M['m10']/M['m00'])
+                    cy = int(M['m01']/M['m00'])
+                    epsilon = 0.01*cv2.arcLength(contour,True)
+                    approx = cv2.approxPolyDP(contour, epsilon,True)
+                    (xc,yc),radius = cv2.minEnclosingCircle(contour)
+                    ar = radius*radius * 3.14
                     x,y,w,h = cv2.boundingRect(contour)
-                    boundingBoxes.append((x,y,w,h))
-                    # print("Object {}: ({},{}); {}x{}; area: {}".format(i, x,y,w,h, area))
+                    if (len(approx) > 12 and inRange(cx, xc) and inRange(cy, yc)):
+                        boundingBoxes.append((x,y,w,h))
+                        filteredContours.append(contour)
+                        
         else:
             pass
+
+        if boundingBoxes:
+            largestContour = max(filteredContours, key=cv2.contourArea)
+            biggestObject_BoundingBox = cv2.boundingRect(largestContour)
 
         upscaledColor = cv2.resize(resizedColor, (width, height), interpolation=cv2.INTER_NEAREST)
         # draw ROI on upscaled image
@@ -123,7 +140,7 @@ while True:
             # b_yaw = bytes(yaw, 'utf-8') # or 'ascii'
             # pitch = 'p {}\n'.format(scaled[1])
             # b_pitch = bytes(pitch, 'utf-8') # or 'ascii'
-            ser.write(packetBytes)
+            # ser.write(packetBytes)
             # ser.write(b_yaw)
             # print(ser.read_all())
             # ser.write(b_pitch)
@@ -166,9 +183,9 @@ while True:
         print("New color range: {}".format(colorTolerance))
     elif key == ord('p'):
         paused = not paused
-    elif key == ord('d'):
+    #elif key == ord('d'):
         # pause/unpause arduino camera movement
-        ser.write(bytes('d', 'utf-8'))
+        # ser.write(bytes('d', 'utf-8'))
     
     # rawCapture.truncate(0)
     loopEnd= time.time()
