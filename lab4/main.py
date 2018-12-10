@@ -59,9 +59,9 @@ while True:
         scaleFactor = 4
         newWidth, newHeight = width//scaleFactor, height//scaleFactor
 
-
-        resizedColor = cv2.resize(frame, (newWidth, newHeight), interpolation=cv2.INTER_CUBIC)
-        resizedColor_blurred = cv2.GaussianBlur(resizedColor, (5, 5), 0)
+        kernel = (5,5)
+        resizedColor = cv2.resize(frame, (newWidth, newHeight), interpolation=cv2.INTER_LINEAR)
+        resizedColor_blurred = cv2.GaussianBlur(resizedColor, kernel, 0)
 
         # resizedHSV = cv2.cvtColor(resizedColor, cv2.COLOR_BGR2HSV)
         resizedHSV = cv2.cvtColor(resizedColor_blurred, cv2.COLOR_BGR2HSV)
@@ -74,8 +74,10 @@ while True:
 
         mask = cv2.inRange(resizedHSV, blueLowerWithTolerance, blueUpperWithTolerance)
 
-        cv2.erode(mask, None, iterations=5)
-        cv2.dilate(mask, None, iterations=5)
+        cv2.erode(mask, kernel, iterations=5)
+        cv2.dilate(mask, kernel, iterations=5)
+        cv2.dilate(mask, kernel, iterations=5)
+        cv2.erode(mask, kernel, iterations=5)
 
         (_,contours, hierarchy) = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
@@ -83,22 +85,26 @@ while True:
         biggestObject_BoundingBox = None
         biggestObjectMiddle = None
         filteredContours = []
+        minPointsInCount = 25
         if contours:            
             for i, contour in enumerate(contours):
-                area = cv2.contourArea(contour)
-                if area > ((newWidth * newHeight)/256):
+                if len(contour) >= minPointsInCount:
                     M = cv2.moments(contour)
                     n02 = M['nu02']
                     n20 = M['nu20']
+                    m01 = M['m01']
+                    m10 = M['m10']
                     momentArea = M['m00']
                     momentR = math.sqrt(momentArea / 3.141592)
                     maxMoment = max(n02, n20)
                     minMoment = min(n02, n20)
-                    if (maxMoment / minMoment) > 0.75 and (maxMoment / minMoment) < 1.25:
-                        x,y,w,h = cv2.boundingRect(contour)
-                        boundingBoxes.append((x,y,w,h))
-                        filteredContours.append(contour)
-                        
+                    if minMoment > 0 and momentArea > 0:
+                        posX = m01 / momentArea
+                        posY = m10 / momentArea
+                        if (maxMoment / minMoment) > 0.75 and (maxMoment / minMoment) < 1.25:
+                            x,y,w,h = cv2.boundingRect(contour)
+                            boundingBoxes.append((x,y,w,h))
+                            filteredContours.append(contour)
         else:
             pass
 
@@ -172,7 +178,7 @@ while True:
         blueLower = (max(0,avg_h), max(0, avg_s - 50), max(0,avg_v - 50))
         blueUpper = (min (255, avg_h), min(255, avg_s + 50), min(255, avg_v + 50))
     elif key == ord('w'):
-        colorTolerance = min(colorTolerance + 1, 50)
+        colorTolerance = min(colorTolerance + 1, 100)
         print("New color range: {}".format(colorTolerance))
     elif key == ord('s'):
         colorTolerance = max(colorTolerance - 1, 0)
