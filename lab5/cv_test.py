@@ -84,11 +84,12 @@ while True:
         filteredContours = []
         minPointsInCount = 25
         if contours:
-            largestContour = max(contours, key=cv2.contourArea)
-            biggestObject_BoundingBox = cv2.boundingRect(largestContour)
+            # largestContour = max(contours, key=cv2.contourArea)
+            # biggestObject_BoundingBox = cv2.boundingRect(largestContour)
             
             for i, contour in enumerate(contours):
-                if len(contour) >= minPointsInCount:
+                pointsInContour = len(contour) 
+                if pointsInContour >= minPointsInCount:
                     area = cv2.contourArea(contour)
                     M = cv2.moments(contour)
                     n02 = M['nu02']
@@ -100,13 +101,14 @@ while True:
                     maxMoment = max(n02, n20)
                     minMoment = min(n02, n20)
                     # if area > ((newWidth * newHeight)/256):
-                    if momentR > 0 and minMoment > 0:
-                        posX = m01 / momentArea
-                        posY = m10 / momentArea
-                        if (maxMoment / minMoment) > 0.75 and (maxMoment / minMoment) < 1.25:
-                            # filteredContours.append(contour)
-                            x,y,w,h = cv2.boundingRect(contour)
-                            boundingBoxes.append((x,y,w,h))
+                    if momentR > 0 and momentArea > 0:
+                        if (maxMoment / minMoment) > 0.8 and (maxMoment / minMoment) < 2:
+                            posX = m01 / momentArea
+                            posY = m10 / momentArea
+                            if posX > 0 and posY > 0:
+                                filteredContours.append(contour)
+                                x,y,w,h = cv2.boundingRect(contour)
+                                boundingBoxes.append((x,y,w,h))
                     # print("Object {}: ({},{}); {}x{}; area: {}".format(i, x,y,w,h, area))
         else:
             pass
@@ -115,9 +117,9 @@ while True:
         # draw ROI on upscaled image
         xROI, yROI = width//2 - roiSize[1]//2 * scaleFactor, height//2 - roiSize[0]//2 * scaleFactor
         cv2.rectangle(upscaledColor, (xROI, yROI), (xROI + roiSize[0]*scaleFactor, yROI + roiSize[1]*scaleFactor), (0, 0, 0), thickness=3)
-        # if boundingBoxes:
-        #     largestContour = max(filteredContours, key=cv2.contourArea)
-        #     biggestObject_BoundingBox = cv2.boundingRect(largestContour)
+        if boundingBoxes:
+            largestContour = max(filteredContours, key=cv2.contourArea)
+            biggestObject_BoundingBox = cv2.boundingRect(largestContour)
 
         for boundingBox in boundingBoxes:
             x,y,w,h = boundingBox
