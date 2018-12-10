@@ -8,7 +8,7 @@ import serial
 # from picamera import PiCamera
 import numpy as np
 import cv2
-
+import math
 
 def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
     # Figure out how 'wide' each range is
@@ -57,9 +57,9 @@ while True:
         scaleFactor = 4
         newWidth, newHeight = width//scaleFactor, height//scaleFactor
 
-
+        kernel = (5,5)
         resizedColor = cv2.resize(frame, (newWidth, newHeight), interpolation=cv2.INTER_CUBIC)
-        resizedColor_blurred = cv2.GaussianBlur(resizedColor, (5, 5), 0)
+        resizedColor_blurred = cv2.GaussianBlur(resizedColor, kernel, 0)
 
         # resizedHSV = cv2.cvtColor(resizedColor, cv2.COLOR_BGR2HSV)
         resizedHSV = cv2.cvtColor(resizedColor_blurred, cv2.COLOR_BGR2HSV)
@@ -73,21 +73,40 @@ while True:
         mask = cv2.inRange(resizedHSV, colorLowerWithTolerance, colorUpperWithTolerance)
         cv2.erode(mask, None, iterations=5)
         cv2.dilate(mask, None, iterations=5)
+        cv2.dilate(mask, None, iterations=5)
+        cv2.erode(mask, None, iterations=5)
 
-        (_,contours, hierarchy) = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        (_,contours, hierarchy) = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
         boundingBoxes = []
         biggestObject_BoundingBox = None
         biggestObjectMiddle = None
+        filteredContours = []
+        minPointsInCount = 25
         if contours:
             largestContour = max(contours, key=cv2.contourArea)
             biggestObject_BoundingBox = cv2.boundingRect(largestContour)
             
             for i, contour in enumerate(contours):
-                area = cv2.contourArea(contour)
-                if area > ((newWidth * newHeight)/256):
-                    x,y,w,h = cv2.boundingRect(contour)
-                    boundingBoxes.append((x,y,w,h))
+                if len(contour) >= minPointsInCount:
+                    area = cv2.contourArea(contour)
+                    M = cv2.moments(contour)
+                    n02 = M['nu02']
+                    n20 = M['nu20']
+                    m01 = M['m01']
+                    m10 = M['m10']
+                    momentArea = M['m00']
+                    momentR = math.sqrt(momentArea / 3.141592)
+                    maxMoment = max(n02, n20)
+                    minMoment = min(n02, n20)
+                    # if area > ((newWidth * newHeight)/256):
+                    if momentR > 0 and minMoment > 0:
+                        posX = m01 / momentArea
+                        posY = m10 / momentArea
+                        if (maxMoment / minMoment) > 0.75 and (maxMoment / minMoment) < 1.25:
+                            # filteredContours.append(contour)
+                            x,y,w,h = cv2.boundingRect(contour)
+                            boundingBoxes.append((x,y,w,h))
                     # print("Object {}: ({},{}); {}x{}; area: {}".format(i, x,y,w,h, area))
         else:
             pass
@@ -96,6 +115,9 @@ while True:
         # draw ROI on upscaled image
         xROI, yROI = width//2 - roiSize[1]//2 * scaleFactor, height//2 - roiSize[0]//2 * scaleFactor
         cv2.rectangle(upscaledColor, (xROI, yROI), (xROI + roiSize[0]*scaleFactor, yROI + roiSize[1]*scaleFactor), (0, 0, 0), thickness=3)
+        # if boundingBoxes:
+        #     largestContour = max(filteredContours, key=cv2.contourArea)
+        #     biggestObject_BoundingBox = cv2.boundingRect(largestContour)
 
         for boundingBox in boundingBoxes:
             x,y,w,h = boundingBox
