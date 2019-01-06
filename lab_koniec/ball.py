@@ -17,6 +17,29 @@ def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
     NewValue = (((value - oldMin) * newRange) / oldRange) + newMin
     return int(NewValue)
 
+def findCenterOfBlob(cv::OutputArrayOfArrays contour)
+        blobCenter = tuple(-1, -1)
+	double dM10 = oMoments.m10;
+	double dArea = oMoments.m00;
+    
+        m01 = M['m01']
+        m10 = M['m10']
+        momentArea = M['m00']
+	#if the area of the found object is not big enough, then it's just noise
+	if (momentArea > 10000)
+	{
+		#calculate the position of the blob
+		int posX = (m10 / momentArea);
+		int posY = (m01 / momentArea);
+
+		if (posX >= 0 && posY >= 0)
+		{
+			blobCenter = tuple(posX, posY)
+		}
+	}
+       return blobCenter;
+
+
 usesPiCamera = True
 
 
@@ -91,7 +114,10 @@ while True:
         biggestObject_BoundingBox = None
         biggestObjectMiddle = None
         filteredContours = []
-        minPointsInCount = 50
+        minPointsInCountour = 50
+
+        biggestObject_Circle = None
+        circles = []
         if contours:
             # largestContour = max(contours, key=cv2.contourArea)
             # biggestObject_BoundingBox = cv2.boundingRect(largestContour)
@@ -99,7 +125,7 @@ while True:
             for i, contour in enumerate(contours):
                 pointsInContour = len(contour)
                 #odrzucamy kontury zawierajace malo elementow, interesuja nas duze obiekty
-                if pointsInContour >= minPointsInCount:
+                if pointsInContour >= minPointsInCountour:
                     #area = cv2.contourArea(contour)
                     M = cv2.moments(contour)
                     n02 = M['nu02'] #okresla wariancje punktow obiektu w kierunku pionowym
@@ -120,6 +146,8 @@ while True:
                                 #znaleziono okrag
                                 filteredContours.append(contour)
                                 x,y,w,h = cv2.boundingRect(contour)
+                                ((x, y), radius) = cv2.minEnclosingCircle(contour)
+                                circles.append((x, y, radius)
                                 boundingBoxes.append((x,y,w,h))
                     # print("Object {}: ({},{}); {}x{}; area: {}".format(i, x,y,w,h, area))
         else:
@@ -158,8 +186,21 @@ while True:
             # packetBytes = bytes(packet, 'utf-8')
             # ser.write(packetBytes)
             # print(ser.read_all())
-            
 
+        #wersja z minEnclosing circles
+        #if circles:
+         #   largestContour = max(filteredContours, key=cv2.contourArea)
+          #  biggestObject_Circle = cv2.minEnclosingCircle(largestContour)
+        #for circle in circles:
+         #   x,y,r = circle
+          #  objectCenter = x*scaleFactor, y*scaleFactor
+           # cv2.circle(upscaledColor, objectCenter, r*scaleFactor, (255, 255, 0), thickness=2)
+        #if biggestObject_Circle:
+         #   x,y,radius = biggestObject_Circle
+          #  objectCenter = x*scaleFactor, y*scaleFactor
+           # scaledRadius = radius*scaleFactor
+            #packet = '<packet, {}, {}, {}>'.format(objectCenter[0], objectCenter[1], scaledRadius)                                   
+    
         cv2.imshow("video", upscaledColor)
         cv2.imshow("roi", roi)
         cv2.imshow("mask", mask)
