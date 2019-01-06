@@ -97,24 +97,27 @@ while True:
             # biggestObject_BoundingBox = cv2.boundingRect(largestContour)
             
             for i, contour in enumerate(contours):
-                pointsInContour = len(contour) 
+                pointsInContour = len(contour)
+                #odrzucamy kontury zawierajace malo elementow, interesuja nas duze obiekty
                 if pointsInContour >= minPointsInCount:
-                    area = cv2.contourArea(contour)
+                    #area = cv2.contourArea(contour)
                     M = cv2.moments(contour)
-                    n02 = M['nu02']
-                    n20 = M['nu20']
+                    n02 = M['nu02'] #okresla wariancje punktow obiektu w kierunku pionowym
+                    n20 = M['nu20'] #okresla wariancje punktow obiektu w kierunku poziomym
                     m01 = M['m01']
                     m10 = M['m10']
                     momentArea = M['m00']
-                    momentR = math.sqrt(momentArea / 3.141592)
+                    momentRadius = math.sqrt(momentArea / 3.141592)
                     maxMoment = max(n02, n20)
                     minMoment = min(n02, n20)
                     # if area > ((newWidth * newHeight)/256):
-                    if momentR > 0 and momentArea > 0:
-                        if (maxMoment / minMoment) > 0.8 and (maxMoment / minMoment) < 2:
-                            posX = m01 / momentArea
-                            posY = m10 / momentArea
+                    if momentRadius > 0 and momentArea > 0:
+                        #bylo 0.8 i 2 z naszej wersji
+                        if ((maxMoment / minMoment) > 0.75 and (maxMoment / minMoment) < 1.25):
+                            posX = m10 / momentArea
+                            posY = m01 / momentArea
                             if posX > 0 and posY > 0:
+                                #znaleziono okrag
                                 filteredContours.append(contour)
                                 x,y,w,h = cv2.boundingRect(contour)
                                 boundingBoxes.append((x,y,w,h))
@@ -148,12 +151,11 @@ while True:
             # print("Vector: {}".format(distanceVector))
             scaled = (translate(distanceVector[0], -width//2, width//2), translate(distanceVector[1], -height//2, height//2) )
             # print("Vector scaled: {}".format(scaled))
-            pitch = scaled[1] # up-down
-            yaw = scaled[0] # left-right
+            pitch = scaled[1] # up-down Y
+            yaw = scaled[0] # left-right X
             cv2.line(upscaledColor, screenMiddle, biggestObjectMiddle, (0, 0, 255))
             packet = '<packet, {}, {}>'.format(yaw, pitch)
             # packetBytes = bytes(packet, 'utf-8')
-            
             # ser.write(packetBytes)
             # print(ser.read_all())
             
