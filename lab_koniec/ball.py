@@ -17,27 +17,19 @@ def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
     NewValue = (((value - oldMin) * newRange) / oldRange) + newMin
     return int(NewValue)
 
-def findCenterOfBlob(cv::OutputArrayOfArrays contour)
-        blobCenter = tuple(-1, -1)
-	double dM10 = oMoments.m10;
-	double dArea = oMoments.m00;
-    
-        m01 = M['m01']
-        m10 = M['m10']
-        momentArea = M['m00']
+def findCenterOfBlob(moment):
+    blobCenter = tuple(-1, -1)    
+    m01 = M['m01']
+    m10 = M['m10']
+    momentArea = M['m00']
 	#if the area of the found object is not big enough, then it's just noise
-	if (momentArea > 10000)
-	{
-		#calculate the position of the blob
-		int posX = (m10 / momentArea);
-		int posY = (m01 / momentArea);
+    if momentArea > 10000:
+        posX = (m10 / momentArea)
+        posY = (m01 / momentArea)
 
-		if (posX >= 0 && posY >= 0)
-		{
-			blobCenter = tuple(posX, posY)
-		}
-	}
-       return blobCenter;
+        if posX >= 0 and posY >= 0:
+            blobCenter = tuple(posX, posY)
+    return blobCenter
 
 
 usesPiCamera = True
@@ -143,13 +135,12 @@ while True:
                             posX = m10 / momentArea
                             posY = m01 / momentArea
                             if posX > 0 and posY > 0:
-                                #znaleziono okrag
                                 filteredContours.append(contour)
-                                x,y,w,h = cv2.boundingRect(contour)
+                                x, y, w, h = cv2.boundingRect(contour)
                                 ((x, y), radius) = cv2.minEnclosingCircle(contour)
                                 circles.append((x, y, radius)
-                                boundingBoxes.append((x,y,w,h))
-                    # print("Object {}: ({},{}); {}x{}; area: {}".format(i, x,y,w,h, area))
+                                boundingBoxes.append( (x, y, w, h) )
+
         else:
             pass
 

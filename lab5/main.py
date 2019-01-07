@@ -19,7 +19,7 @@ def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
 
     return int(NewValue)
 
-usesPiCamera = True
+usesPiCamera = False
 
 # camera = PiCamera()
 # camera.framerate = 60
@@ -45,7 +45,7 @@ roiSize = (6, 6) # roi size on the scaled down image (converted to HSV)
 
 
 # initialize serial communication
-#ser = serial.Serial(port='COM5', baudrate=57600, timeout=0.05)
+ser = serial.Serial(port='COM5', baudrate=57600, timeout=0.05)
 
 while True:
 # for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
@@ -132,22 +132,12 @@ while True:
             cv2.circle(upscaledColor, biggestObjectMiddle, 2, (255, 0, 0), thickness=2)
             screenMiddle = width//2, height//2
             distanceVector = tuple(map(lambda x, y: x - y, biggestObjectMiddle, screenMiddle))
-            # print("Vector: {}".format(distanceVector))
             scaled = (translate(distanceVector[0], -width//2, width//2), translate(distanceVector[1], -height//2, height//2) )
-            # print("Vector scaled: {}".format(scaled))
             cv2.line(upscaledColor, screenMiddle, biggestObjectMiddle, (0, 0, 255))
             packet = '<packet, {}, {}>'.format(scaled[0], scaled[1])
-            # packetBytes = bytes(packet, 'utf-8')
-            # yaw = 'y {}\n'.format(scaled[0])
-            # b_yaw = bytes(yaw, 'utf-8') # or 'ascii'
-            # pitch = 'p {}\n'.format(scaled[1])
-            # b_pitch = bytes(pitch, 'utf-8') # or 'ascii'
-            # ser.write(packetBytes)
-            # ser.write(b_yaw)
-            # print(ser.read_all())
-            # ser.write(b_pitch)
-            # print(ser.read_all())
-            
+            print("Packet: {}".format(packet))
+            packetBytes = bytes(packet, 'utf-8')
+            ser.write(packetBytes)
 
         cv2.imshow("video", upscaledColor)
         cv2.imshow("roi", roi)

@@ -9,7 +9,6 @@ import random as rng
 import math
 # import typing
 
-
 def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
     # Figure out how 'wide' each range is
     oldRange = oldMax - oldMin
@@ -59,25 +58,32 @@ while True:
         scaleFactor = 4
         newWidth, newHeight = width//scaleFactor, height//scaleFactor
 
-        kernel = (5,5)
-        resizedColor = cv2.resize(frame, (newWidth, newHeight), interpolation=cv2.INTER_LINEAR)
-        resizedColor_blurred = cv2.GaussianBlur(resizedColor, kernel, 0)
+        kernel = (11,11)
+        resizedColor2 = cv2.resize(frame, (newWidth, newHeight), interpolation=cv2.INTER_LINEAR)
 
-        # resizedHSV = cv2.cvtColor(resizedColor, cv2.COLOR_BGR2HSV)
+        lab= cv2.cvtColor(resizedColor2, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)    
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        cl = clahe.apply(l)
+        limg = cv2.merge((cl,a,b))
+        resizedColor = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+
+        resizedColor_blurred = cv2.GaussianBlur(resizedColor, kernel, 10)
+
         resizedHSV = cv2.cvtColor(resizedColor_blurred, cv2.COLOR_BGR2HSV)
-
+        gray = cv2.cvtColor(resizedColor_blurred, cv2.COLOR_BGR2GRAY)
         roi = resizedHSV[newHeight//2 - roiSize[0]//2 : newHeight //2 + roiSize[0]//2, newWidth//2 - roiSize[1]//2 : newWidth//2 + roiSize[1]//2, :]
-        # roi = resizedHSV[10*newHeight//20 : 12*newHeight//20, 10*newWidth//20 : 12*newWidth // 20, :]
-        
+
         blueLowerWithTolerance = (blueLower[0] - colorTolerance,) + blueLower[1:]
         blueUpperWithTolerance = (blueUpper[0] + colorTolerance,) + blueUpper[1:]
 
+        # kernel_open =cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        # opening = cv2.morphologyEx(resizedHSV, cv2.MORPH_OPEN, kernel_open)
+        
         mask = cv2.inRange(resizedHSV, blueLowerWithTolerance, blueUpperWithTolerance)
-
-        cv2.erode(mask, kernel, iterations=5)
-        cv2.dilate(mask, kernel, iterations=5)
-        cv2.dilate(mask, kernel, iterations=5)
-        cv2.erode(mask, kernel, iterations=5)
+        
+        cv2.erode(resizedHSV, None, iterations=5)
+        cv2.dilate(resizedHSV, None, iterations=5)
 
         (_,contours, hierarchy) = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
@@ -101,7 +107,7 @@ while True:
                     if minMoment > 0 and momentArea > 0:
                         posX = m01 / momentArea
                         posY = m10 / momentArea
-                        if (maxMoment / minMoment) > 0.75 and (maxMoment / minMoment) < 1.25:
+                        if (maxMoment / minMoment) > 0.5 and (maxMoment / minMoment) < 1.5:
                             x,y,w,h = cv2.boundingRect(contour)
                             boundingBoxes.append((x,y,w,h))
                             filteredContours.append(contour)
@@ -152,6 +158,7 @@ while True:
         cv2.imshow("video", upscaledColor)
         cv2.imshow("roi", roi)
         cv2.imshow("mask", mask)
+        cv2.imshow("blured", resizedHSV)
 
         modTolerances = False
 
