@@ -38,15 +38,15 @@ time.sleep(2.0)
 
 
 # cap = cv2.VideoCapture(0)
-blueLower = (0, 100, 50)
-blueUpper = (100, 255, 255)
+blueLower = (23, 100, 100)
+blueUpper = (31, 255, 255)
 colorTolerance = 10
 paused = False
 roiSize = (6, 6) # roi size on the scaled down image (converted to HSV)
 
 
 # initialize serial communication
-ser = serial.Serial(port='COM5', baudrate=57600, timeout=0.05)
+#ser = serial.Serial(port='COM5', baudrate=57600, timeout=0.05)
 # ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
 
 while True:
@@ -61,7 +61,7 @@ while True:
         scaleFactor = 4
         newWidth, newHeight = width//scaleFactor, height//scaleFactor
 
-        kernel = (5,5)
+        kernel = (9,9)
         resizedColor = cv2.resize(frame, (newWidth, newHeight), interpolation=cv2.INTER_LINEAR)
         resizedColor_blurred = cv2.GaussianBlur(resizedColor, kernel, 0)
 
@@ -87,7 +87,7 @@ while True:
         biggestObject_BoundingBox = None
         biggestObjectMiddle = None
         filteredContours = []
-        minPointsInCount = 25
+        minPointsInCount = 50
         if contours:            
             for i, contour in enumerate(contours):
                 if len(contour) >= minPointsInCount:
@@ -100,13 +100,14 @@ while True:
                     momentR = math.sqrt(momentArea / 3.141592)
                     maxMoment = max(n02, n20)
                     minMoment = min(n02, n20)
-                    if minMoment > 0 and momentArea > 0:
-                        posX = m01 / momentArea
-                        posY = m10 / momentArea
+                    if momentR > 0 and momentArea > 0:
                         if (maxMoment / minMoment) > 0.75 and (maxMoment / minMoment) < 1.25:
-                            x,y,w,h = cv2.boundingRect(contour)
-                            boundingBoxes.append((x,y,w,h))
-                            filteredContours.append(contour)
+                            posX = m10 / momentArea
+                            posY = m01 / momentArea
+                            if posX > 0 and posY > 0:
+                                x,y,w,h = cv2.boundingRect(contour)
+                                boundingBoxes.append((x,y,w,h))
+                                filteredContours.append(contour)
         else:
             pass
 
@@ -139,8 +140,8 @@ while True:
             packet = '<{}, {}>'.format(scaled[0], scaled[1])
             print("Packet: {}".format(packet))
             packetBytes = bytes(packet, 'utf-8')
-            ser.write(packetBytes)
-            ser.flush()
+            #ser.write(packetBytes)
+            #ser.flush()
 
         cv2.imshow("video", upscaledColor)
         cv2.imshow("roi", roi)
