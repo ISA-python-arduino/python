@@ -134,7 +134,7 @@ while True:
             distanceVector = tuple(map(lambda x, y: x - y, biggestObjectMiddle, screenMiddle))
             scaled = (translate(distanceVector[0], -width//2, width//2), translate(distanceVector[1], -height//2, height//2) )
             cv2.line(upscaledColor, screenMiddle, biggestObjectMiddle, (0, 0, 255))
-            packet = '<packet, {}, {}>'.format(scaled[0], scaled[1])
+            packet = '<{}, {}>'.format(scaled[0], scaled[1])
             print("Packet: {}".format(packet))
             packetBytes = bytes(packet, 'utf-8')
             ser.write(packetBytes)
