@@ -20,6 +20,7 @@ def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
     return int(NewValue)
 
 usesPiCamera = False
+# usesPiCamera = True
 
 # camera = PiCamera()
 # camera.framerate = 60
@@ -46,6 +47,7 @@ roiSize = (6, 6) # roi size on the scaled down image (converted to HSV)
 
 # initialize serial communication
 ser = serial.Serial(port='COM5', baudrate=57600, timeout=0.05)
+# ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
 
 while True:
 # for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
@@ -138,6 +140,7 @@ while True:
             print("Packet: {}".format(packet))
             packetBytes = bytes(packet, 'utf-8')
             ser.write(packetBytes)
+            ser.flush()
 
         cv2.imshow("video", upscaledColor)
         cv2.imshow("roi", roi)
