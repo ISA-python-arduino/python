@@ -1,6 +1,6 @@
 import time 
 from imutils.video import VideoStream
-import serial
+#import serial
 import numpy as np
 import cv2
 import random as rng
@@ -12,24 +12,24 @@ def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
     NewValue = (((value - oldMin) * newRange) / oldRange) + newMin
     return int(NewValue)
 
-usesPiCamera = True
+usesPiCamera = False
 
 cameraResolution = (640, 480)
 vs = VideoStream(usePiCamera=usesPiCamera, resolution=cameraResolution, framerate=60).start()
 time.sleep(2.0)
 
-blueLower = (23, 100, 100)
-blueUpper = (31, 255, 255)
+blueLower = (40, 100, 80)
+blueUpper = (75, 255, 255)
 colorTolerance = 10
 paused = False
 roiSize = (6, 6)
 
-ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
+#ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
 
 while True:
     if not paused:
         frame = vs.read()
-        frame = cv2.flip(frame, flipCode=-1)
+        # frame = cv2.flip(frame, flipCode=-1)
         
         height, width = frame.shape[0:2]
         scaleFactor = 4
@@ -42,36 +42,44 @@ while True:
         
         blueLowerWithTolerance = (blueLower[0] - colorTolerance,) + blueLower[1:]
         blueUpperWithTolerance = (blueUpper[0] + colorTolerance,) + blueUpper[1:]
-
+		
+		# sprawdza czy pixele są w podanym zakresie jeżeli tak to przypisuje im wartość jeden
         mask = cv2.inRange(resizedHSV, blueLowerWithTolerance, blueUpperWithTolerance)
 
         cv2.erode(mask, kernel, iterations=5)
         cv2.dilate(mask, kernel, iterations=5)
         cv2.dilate(mask, kernel, iterations=5)
         cv2.erode(mask, kernel, iterations=5)
-
+		# znajduje kontury w masce, RETR_EXTERNAL oznacza, że szuka tylko pojedyńczych zewnętrznych konturów. 
+		# CHAIN_APPROX_NONE oznacza, że na liscie punktów konturu zostaną umieszczone wszystkie puntkty 
         (_,contours, hierarchy) = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
         boundingBoxes = []
         biggestObject_BoundingBox = None
         biggestObjectMiddle = None
         filteredContours = []
-        minPointsInCount = 15
+		# minimalna ilość punktów w konturze aby móc wstępnie uznać go za nadający się do weryfikacji
+        minPointsInCount = 25
         if contours:            
             for i, contour in enumerate(contours):
                 if len(contour) >= minPointsInCount:
                     M = cv2.moments(contour)
-                    n02 = M['nu02']
-                    n20 = M['nu20']
-                    m01 = M['m01']
+                    n02 = M['nu02'] # wariancja punktów obiektu w kierunku pionowym
+                    n20 = M['nu20'] # wariancja punktów obiektu w kierunku poziomym
+                    m01 = M['m01'] 
                     m10 = M['m10']
+					# suma wszystkich punktów - pole powierzchni lub długość obwodu
                     momentArea = M['m00']
                     momentR = math.sqrt(momentArea / 3.141592)
                     maxMoment = max(n02, n20)
                     minMoment = min(n02, n20)
                     if momentR > 0 and momentArea > 0:
-                        tempMoment = (maxMoment / minMoment) 
-                        if  tempMoment > 0.75 and tempMoment < 1.9:
+                        tempMoment = (maxMoment / minMoment) - 1
+                        tempMoment = tempMoment * tempMoment
+                        tempMoment = tempMoment / (1 - M['nu11']) * (1 - M['nu11'])
+                        print("tempMoment: ", tempMoment)
+                        if  tempMoment > 0.0 and tempMoment < 0.1:
+							# wartości średnie punktów konturu / obiektu
                             posX = m10 / momentArea
                             posY = m01 / momentArea
                             if posX > 0 and posY > 0:
@@ -106,12 +114,12 @@ while True:
             distanceVector = tuple(map(lambda x, y: x - y, biggestObjectMiddle, screenMiddle))
             scaled = (translate(distanceVector[0], -width//2, width//2), translate(distanceVector[1], -height//2, height//2) )
             cv2.line(upscaledColor, screenMiddle, biggestObjectMiddle, (0, 0, 255))
-            packet = '<packet, {}, {}>'.format(scaled[0], scaled[1])
-            packetBytes = bytes(packet, 'utf-8')
-            ser.write(packetBytes)
-        # cv2.imshow("video", upscaledColor)
-        # cv2.imshow("roi", roi)
-        # cv2.imshow("mask", mask)
+            #packet = '<packet, {}, {}>'.format(scaled[0], scaled[1])
+            #packetBytes = bytes(packet, 'utf-8')
+            #ser.write(packetBytes)
+        cv2.imshow("video", upscaledColor)
+        cv2.imshow("roi", roi)
+        cv2.imshow("mask", mask)
         modTolerances = False
     key = cv2.waitKey(1) & 0xFF
     if key == ord('q'):
