@@ -3,7 +3,7 @@
 
 import time
 from imutils.video import VideoStream
-import serial
+#import serial
 # from picamera.array import PiRGBArray
 # from picamera import PiCamera
 import numpy as np
@@ -21,7 +21,7 @@ def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
 
     return int(NewValue)
 
-usesPiCamera = True
+usesPiCamera = False
 
 # camera = PiCamera()
 # camera.framerate = 60
@@ -47,7 +47,7 @@ roiSize = (6, 6) # roi size on the scaled down image (converted to HSV)
 
 
 # initialize serial communication
-ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
+# ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
 
 while True:
 # for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
@@ -126,7 +126,7 @@ while True:
             # b_yaw = bytes(yaw, 'utf-8') # or 'ascii'
             # pitch = 'p {}\n'.format(scaled[1])
             # b_pitch = bytes(pitch, 'utf-8') # or 'ascii'
-            ser.write(packetBytes)
+            # ser.write(packetBytes)
             # ser.write(b_yaw)
             # print(ser.read_all())
             # ser.write(b_pitch)

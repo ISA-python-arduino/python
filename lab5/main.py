@@ -18,8 +18,8 @@ cameraResolution = (640, 480)
 vs = VideoStream(usePiCamera=usesPiCamera, resolution=cameraResolution, framerate=60).start()
 time.sleep(2.0)
 
-blueLower = (40, 100, 80)
-blueUpper = (75, 255, 255)
+blueLower = (20, 150, 100)
+blueUpper = (33, 255, 255)
 colorTolerance = 10
 paused = False
 roiSize = (6, 6)
@@ -59,7 +59,7 @@ while True:
         biggestObjectMiddle = None
         filteredContours = []
 		# minimalna ilość punktów w konturze aby móc wstępnie uznać go za nadający się do weryfikacji
-        minPointsInCount = 25
+        minPointsInCount = 15
         if contours:            
             for i, contour in enumerate(contours):
                 if len(contour) >= minPointsInCount:
@@ -77,8 +77,8 @@ while True:
                         tempMoment = (maxMoment / minMoment) - 1
                         tempMoment = tempMoment * tempMoment
                         tempMoment = tempMoment / (1 - M['nu11']) * (1 - M['nu11'])
-                        print("tempMoment: ", tempMoment)
-                        if  tempMoment > 0.0 and tempMoment < 0.1:
+                        if  tempMoment > 0.0 and tempMoment < 0.05:
+                            print("tempMoment: ", tempMoment)
 							# wartości średnie punktów konturu / obiektu
                             posX = m10 / momentArea
                             posY = m01 / momentArea
@@ -86,6 +86,8 @@ while True:
                                 x,y,w,h = cv2.boundingRect(contour)
                                 boundingBoxes.append((x,y,w,h))
                                 filteredContours.append(contour)
+                else:
+                    print("za malo punktow: ",len(contour)) 
         else:
             pass
 
