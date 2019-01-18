@@ -6,7 +6,7 @@ import random as rng
 import math
 import serial
 
-ARDUINO_MODE = False
+ARDUINO_MODE = True
 DEBUG = True
 USE_PI_CAMERA = ARDUINO_MODE
 CAMERA_RESOLUTION = (640, 480)
@@ -29,8 +29,8 @@ stopMessage = time.process_time()
 
 vs = VideoStream(usePiCamera=USE_PI_CAMERA, resolution=CAMERA_RESOLUTION, framerate=60).start()
 
-LOWER_COLOR = (20, 150, 100)
-UPPER_COLOR = (33, 255, 255)
+LOWER_COLOR = (15, 100, 50)
+UPPER_COLOR = (40, 255, 255)
 if not ARDUINO_MODE:
     LOWER_COLOR = (40, 100, 50)
     UPPER_COLOR = (80, 255, 255)
@@ -158,7 +158,7 @@ while not quit():
     if filteredContours: 
         largestContour = max(filteredContours, key=cv2.contourArea)
         biggestObject_BoundingBox = cv2.boundingRect(largestContour) 
-        if not ARDUINO_MODE:
+        if DEBUG:
             cv2.drawContours(upscaledColor, [largestContour * [SCALE_FACTOR, SCALE_FACTOR]], -1, (255,0,0), thickness=3)
             (x,y),radius = cv2.minEnclosingCircle(largestContour * [SCALE_FACTOR, SCALE_FACTOR])
             center = (int(x),int(y))
@@ -182,7 +182,7 @@ while not quit():
     else:
         stopMessage = stopCommand(stopMessage)
                 
-    if not ARDUINO_MODE:
+    if DEBUG:
         cv2.imshow("video", upscaledColor)
         cv2.imshow("roi", roi(resizedHSV))
         cv2.imshow("mask", mask)
